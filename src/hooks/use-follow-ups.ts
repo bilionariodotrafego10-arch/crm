@@ -22,7 +22,7 @@ export function useFollowUps(leadId: string) {
 
   useEffect(() => { fetchFollowUps() }, [fetchFollowUps])
 
-  const createFollowUp = async (payload: { data: string; observacao: string; usuario_id: string }) => {
+  const createFollowUp = async (payload: { data: string; observacao: string }) => {
     const { error } = await supabase.from('follow_ups').insert({ ...payload, lead_id: leadId })
     if (!error) await fetchFollowUps()
     return { error }

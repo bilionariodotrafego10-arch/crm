@@ -17,7 +17,7 @@ CREATE TABLE leads (
   data_contato DATE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('respondeu', 'nao_respondeu')),
   cidade_id UUID REFERENCES cidades(id) ON DELETE SET NULL,
-  criado_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  criado_por UUID REFERENCES auth.users(id) ON DELETE SET NULL DEFAULT auth.uid(),
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE alunos (
   email TEXT NOT NULL,
   data_matricula DATE NOT NULL,
   curso TEXT NOT NULL,
-  criado_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  criado_por UUID REFERENCES auth.users(id) ON DELETE SET NULL DEFAULT auth.uid(),
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -39,7 +39,7 @@ CREATE TABLE follow_ups (
   lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
   data DATE NOT NULL DEFAULT CURRENT_DATE,
   observacao TEXT NOT NULL,
-  usuario_id UUID REFERENCES auth.users(id) ON DELETE SET NULL
+  usuario_id UUID REFERENCES auth.users(id) ON DELETE SET NULL DEFAULT auth.uid()
 );
 
 -- Ativar RLS em todas as tabelas
@@ -58,18 +58,18 @@ CREATE POLICY "autenticados podem deletar cidades" ON cidades FOR DELETE TO auth
 
 -- leads
 CREATE POLICY "autenticados podem ler leads" ON leads FOR SELECT TO authenticated USING (true);
-CREATE POLICY "autenticados podem inserir leads" ON leads FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "autenticados podem inserir leads" ON leads FOR INSERT TO authenticated WITH CHECK (criado_por = auth.uid());
 CREATE POLICY "autenticados podem atualizar leads" ON leads FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "autenticados podem deletar leads" ON leads FOR DELETE TO authenticated USING (true);
 
 -- alunos
 CREATE POLICY "autenticados podem ler alunos" ON alunos FOR SELECT TO authenticated USING (true);
-CREATE POLICY "autenticados podem inserir alunos" ON alunos FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "autenticados podem inserir alunos" ON alunos FOR INSERT TO authenticated WITH CHECK (criado_por = auth.uid());
 CREATE POLICY "autenticados podem atualizar alunos" ON alunos FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "autenticados podem deletar alunos" ON alunos FOR DELETE TO authenticated USING (true);
 
 -- follow_ups
 CREATE POLICY "autenticados podem ler follow_ups" ON follow_ups FOR SELECT TO authenticated USING (true);
-CREATE POLICY "autenticados podem inserir follow_ups" ON follow_ups FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "autenticados podem inserir follow_ups" ON follow_ups FOR INSERT TO authenticated WITH CHECK (usuario_id = auth.uid());
 CREATE POLICY "autenticados podem atualizar follow_ups" ON follow_ups FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "autenticados podem deletar follow_ups" ON follow_ups FOR DELETE TO authenticated USING (true);

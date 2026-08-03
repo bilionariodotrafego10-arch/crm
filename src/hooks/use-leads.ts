@@ -21,7 +21,7 @@ export function useLeads() {
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
 
-  const createLead = async (lead: Omit<Lead, 'id' | 'criado_em' | 'cidade'> & { criado_por: string }) => {
+  const createLead = async (lead: Omit<Lead, 'id' | 'criado_em' | 'cidade' | 'criado_por'>) => {
     const { error } = await supabase.from('leads').insert(lead)
     if (!error) await fetchLeads()
     return { error }

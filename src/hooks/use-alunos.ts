@@ -21,7 +21,7 @@ export function useAlunos() {
 
   useEffect(() => { fetchAlunos() }, [fetchAlunos])
 
-  const createAluno = async (aluno: Omit<Aluno, 'id' | 'criado_em'> & { criado_por: string }) => {
+  const createAluno = async (aluno: Omit<Aluno, 'id' | 'criado_em' | 'criado_por'>) => {
     const { error } = await supabase.from('alunos').insert(aluno)
     if (!error) await fetchAlunos()
     return { error }
