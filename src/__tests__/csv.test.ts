@@ -40,4 +40,19 @@ describe('generateCSV', () => {
     const csv = generateCSV([{ observacao: 'Linha 1\nLinha 2' }], ['observacao'])
     expect(csv).toContain('"Linha 1\nLinha 2"')
   })
+
+  it('neutraliza valores que começam com caracteres de fórmula (CSV injection)', () => {
+    const csv = generateCSV([{ nome: '=HYPERLINK("http://evil.com")' }], ['nome'])
+    expect(csv).toContain("'=HYPERLINK")
+    expect(csv).not.toMatch(/\n=HYPERLINK/)
+  })
+
+  it('neutraliza valores que começam com +, - ou @ e ainda aplica quoting quando necessário', () => {
+    expect(generateCSV([{ nome: '+5511999999999' }], ['nome'])).toContain("'+5511999999999")
+    expect(generateCSV([{ nome: '-1+1' }], ['nome'])).toContain("'-1+1")
+    expect(generateCSV([{ nome: '@usuario' }], ['nome'])).toContain("'@usuario")
+
+    const csvComVirgula = generateCSV([{ nome: '=1,2' }], ['nome'])
+    expect(csvComVirgula).toContain('"\'=1,2"')
+  })
 })

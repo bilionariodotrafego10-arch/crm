@@ -8,7 +8,11 @@ export function generateCSV<T extends Record<string, unknown>>(
   const dataRows = rows.map((row) =>
     columns
       .map((col) => {
-        const value = String(row[col] ?? '')
+        const rawValue = String(row[col] ?? '')
+        // Mitigação OWASP para CSV Injection: valores que começam com
+        // caracteres interpretados como início de fórmula pelo Excel/Sheets
+        // (=, +, -, @, tab, CR) recebem um apóstrofo neutralizador antes.
+        const value = /^[=+\-@\t\r]/.test(rawValue) ? `'${rawValue}` : rawValue
         const needsQuoting = /[",\n\r]/.test(value)
         return needsQuoting ? `"${value.replace(/"/g, '""')}"` : value
       })
