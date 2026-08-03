@@ -9,7 +9,8 @@ export function generateCSV<T extends Record<string, unknown>>(
     columns
       .map((col) => {
         const value = String(row[col] ?? '')
-        return value.includes(',') ? `"${value}"` : value
+        const needsQuoting = /[",\n\r]/.test(value)
+        return needsQuoting ? `"${value.replace(/"/g, '""')}"` : value
       })
       .join(',')
   )

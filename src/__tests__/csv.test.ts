@@ -30,4 +30,14 @@ describe('generateCSV', () => {
     expect(lines).toHaveLength(1)
     expect(lines[0]).toBe('nome')
   })
+
+  it('escapa aspas duplas internas duplicando-as e envolvendo o campo em aspas', () => {
+    const csv = generateCSV([{ nome: 'Ele disse "oi"' }], ['nome'])
+    expect(csv).toContain('"Ele disse ""oi"""')
+  })
+
+  it('envolve em aspas campos com quebra de linha', () => {
+    const csv = generateCSV([{ observacao: 'Linha 1\nLinha 2' }], ['observacao'])
+    expect(csv).toContain('"Linha 1\nLinha 2"')
+  })
 })
