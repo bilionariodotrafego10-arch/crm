@@ -5,7 +5,7 @@ interface Props {
 }
 
 export default function LoginPage({ searchParams }: Props) {
-  const error = searchParams?.error
+  const hasError = Boolean(searchParams?.error)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -15,9 +15,9 @@ export default function LoginPage({ searchParams }: Props) {
           <p className="text-sm text-muted-foreground">Entre com sua conta para acessar</p>
         </div>
 
-        {error && (
+        {hasError && (
           <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive">Email ou senha inválidos</p>
           </div>
         )}
 

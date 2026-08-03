@@ -18,8 +18,8 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument()
   })
 
-  it('mostra mensagem de erro quando passada via searchParams', () => {
-    render(<LoginPage searchParams={{ error: 'Credenciais inválidas' }} />)
-    expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument()
+  it('mostra mensagem de erro fixa quando searchParams indica erro', () => {
+    render(<LoginPage searchParams={{ error: '1' }} />)
+    expect(screen.getByText('Email ou senha inválidos')).toBeInTheDocument()
   })
 })

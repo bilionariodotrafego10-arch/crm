@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
 
   // Vendedor tentando acessar /dashboard/config → follow-up
   if (user && request.nextUrl.pathname.startsWith('/dashboard/config')) {
-    const role = user.user_metadata?.role as string | undefined
+    const role = user.app_metadata?.role as string | undefined
     if (role !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard/follow-up', request.url))
     }

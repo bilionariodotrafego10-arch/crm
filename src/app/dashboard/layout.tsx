@@ -8,7 +8,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  const role = (user.user_metadata?.role as string) ?? 'vendedor'
+  const role = (user.app_metadata?.role as string) ?? 'vendedor'
 
   return (
     <div className="flex min-h-screen bg-background">
