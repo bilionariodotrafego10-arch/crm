@@ -28,8 +28,15 @@ export async function convidarUsuario(formData: FormData) {
   // role precisa ser gravado em uma segunda chamada via updateUserById, que é
   // o campo lido por middleware.ts / dashboard/layout.tsx / config/page.tsx
   // para decisões de autorização.
+  //
+  // redirectTo aponta para /aceitar-convite (não /login): o link do convite
+  // chega com os tokens de sessão no fragmento da URL (#access_token=...),
+  // que o servidor nunca recebe. /aceitar-convite é client-side e processa
+  // esse fragmento (createClient() com detectSessionInUrl) antes de deixar a
+  // pessoa definir a senha — sem isso ela cai numa tela de login sem ter
+  // senha nenhuma, travada.
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/aceitar-convite`,
   })
 
   if (error) return { error: error.message }

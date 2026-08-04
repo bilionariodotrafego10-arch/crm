@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { signIn } from './actions'
 
 interface Props {
@@ -57,6 +58,13 @@ export default function LoginPage({ searchParams }: Props) {
             Entrar
           </button>
         </form>
+
+        <p className="text-sm text-muted-foreground text-center">
+          Não tem conta?{' '}
+          <Link href="/signup" className="text-primary hover:underline">
+            Cadastre-se
+          </Link>
+        </p>
       </div>
     </div>
   )
