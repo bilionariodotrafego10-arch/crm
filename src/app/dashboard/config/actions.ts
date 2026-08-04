@@ -12,8 +12,15 @@ function getAdminClient() {
 }
 
 export async function convidarUsuario(formData: FormData) {
+  const supabase = await createServerClient()
+  const { data: { user: usuarioLogado } } = await supabase.auth.getUser()
+  if (usuarioLogado?.app_metadata?.role !== 'admin') {
+    return { error: 'Não autorizado' }
+  }
+
   const email = formData.get('email') as string
   const role = formData.get('role') as string
+  const roleValidado = role === 'admin' ? 'admin' : 'vendedor'
   const admin = getAdminClient()
 
   // inviteUserByEmail só aceita `data` (grava em user_metadata) e `redirectTo`.
@@ -28,17 +35,25 @@ export async function convidarUsuario(formData: FormData) {
   if (error) return { error: error.message }
 
   const userId = data.user?.id
-  if (userId) {
-    const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
-      app_metadata: { role },
-    })
-    if (updateError) return { error: updateError.message }
+  if (!userId) {
+    return { error: 'Usuário convidado, mas não foi possível definir o cargo. Contate o suporte.' }
   }
+
+  const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+    app_metadata: { role: roleValidado },
+  })
+  if (updateError) return { error: updateError.message }
 
   return { error: null }
 }
 
 export async function removerUsuario(userId: string) {
+  const supabase = await createServerClient()
+  const { data: { user: usuarioLogado } } = await supabase.auth.getUser()
+  if (usuarioLogado?.app_metadata?.role !== 'admin') {
+    return { error: 'Não autorizado' }
+  }
+
   const admin = getAdminClient()
   const { error } = await admin.auth.admin.deleteUser(userId)
   if (error) return { error: error.message }
@@ -54,6 +69,12 @@ export async function trocarSenha(formData: FormData) {
 }
 
 export async function listarUsuarios() {
+  const supabase = await createServerClient()
+  const { data: { user: usuarioLogado } } = await supabase.auth.getUser()
+  if (usuarioLogado?.app_metadata?.role !== 'admin') {
+    return []
+  }
+
   const admin = getAdminClient()
   const { data, error } = await admin.auth.admin.listUsers()
   if (error) return []
