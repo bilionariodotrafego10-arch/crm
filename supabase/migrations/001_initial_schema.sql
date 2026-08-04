@@ -73,3 +73,16 @@ CREATE POLICY "autenticados podem ler follow_ups" ON follow_ups FOR SELECT TO au
 CREATE POLICY "autenticados podem inserir follow_ups" ON follow_ups FOR INSERT TO authenticated WITH CHECK (usuario_id = auth.uid());
 CREATE POLICY "autenticados podem atualizar follow_ups" ON follow_ups FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "autenticados podem deletar follow_ups" ON follow_ups FOR DELETE TO authenticated USING (true);
+
+-- Impedir alteração da coluna de autoria via UPDATE (time compartilhado pode editar o
+-- resto da linha, mas não pode reatribuir a autoria de um registro para outro usuário).
+-- RLS de UPDATE não distingue OLD/NEW em WITH CHECK, então a proteção é feita via
+-- privilégio de coluna (REVOKE/GRANT), que o Postgres aplica independente de RLS.
+REVOKE UPDATE ON leads FROM authenticated;
+GRANT UPDATE (nome, telefone, email, data_contato, status, cidade_id) ON leads TO authenticated;
+
+REVOKE UPDATE ON alunos FROM authenticated;
+GRANT UPDATE (nome, telefone, email, data_matricula, curso) ON alunos TO authenticated;
+
+REVOKE UPDATE ON follow_ups FROM authenticated;
+GRANT UPDATE (data, observacao) ON follow_ups TO authenticated;

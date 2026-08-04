@@ -27,7 +27,7 @@ export function useAlunos() {
     return { error }
   }
 
-  const updateAluno = async (id: string, updates: Partial<Aluno>) => {
+  const updateAluno = async (id: string, updates: Partial<Omit<Aluno, 'id' | 'criado_em' | 'criado_por'>>) => {
     const { error } = await supabase.from('alunos').update(updates).eq('id', id)
     if (!error) await fetchAlunos()
     return { error }

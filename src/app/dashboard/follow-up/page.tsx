@@ -22,15 +22,18 @@ export default function FollowUpPage() {
   const leadsFiltrados = useMemo(() => {
     let resultado = leads
 
-    const range = filtroData === 'personalizado'
-      ? (dataInicio && dataFim ? { start: new Date(dataInicio), end: new Date(dataFim) } : null)
-      : getDateRange(filtroData)
-
-    if (range) {
-      resultado = resultado.filter((l) => {
-        const data = new Date(l.data_contato + 'T00:00:00')
-        return data >= range.start && data <= range.end
-      })
+    if (filtroData === 'personalizado') {
+      if (dataInicio && dataFim) {
+        resultado = resultado.filter((l) => l.data_contato >= dataInicio && l.data_contato <= dataFim)
+      }
+    } else {
+      const range = getDateRange(filtroData)
+      if (range) {
+        resultado = resultado.filter((l) => {
+          const data = new Date(l.data_contato + 'T00:00:00')
+          return data >= range.start && data <= range.end
+        })
+      }
     }
 
     if (filtroStatus !== 'todos') {

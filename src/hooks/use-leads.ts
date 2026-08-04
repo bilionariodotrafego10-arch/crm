@@ -27,7 +27,7 @@ export function useLeads() {
     return { error }
   }
 
-  const updateLead = async (id: string, updates: Partial<Lead>) => {
+  const updateLead = async (id: string, updates: Partial<Omit<Lead, 'id' | 'criado_em' | 'cidade' | 'criado_por'>>) => {
     const { error } = await supabase.from('leads').update(updates).eq('id', id)
     if (!error) await fetchLeads()
     return { error }
