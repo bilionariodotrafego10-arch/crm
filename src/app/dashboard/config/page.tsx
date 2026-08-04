@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
+import { listarUsuarios } from './actions'
+import { ConfigClient } from './config-client'
 
 export default async function ConfigPage() {
   const supabase = await createServerClient()
@@ -10,5 +12,6 @@ export default async function ConfigPage() {
     redirect('/dashboard/follow-up')
   }
 
-  return <div><h1 className="text-2xl font-bold text-foreground">Configurações</h1></div>
+  const usuarios = await listarUsuarios()
+  return <ConfigClient usuariosIniciais={usuarios} />
 }
