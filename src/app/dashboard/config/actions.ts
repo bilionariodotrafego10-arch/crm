@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -82,4 +83,51 @@ export async function listarUsuarios() {
     email: u.email ?? '',
     role: (u.app_metadata?.role as string) ?? 'vendedor',
   }))
+}
+
+export async function criarInstanciaWhatsapp(formData: FormData) {
+  const supabase = await createServerClient()
+  const { data: { user: usuarioLogado } } = await supabase.auth.getUser()
+  if (usuarioLogado?.app_metadata?.role !== 'admin') {
+    return { error: 'Não autorizado', webhookUrl: null }
+  }
+
+  const apelido = formData.get('apelido') as string
+  const telefone = formData.get('telefone') as string
+  const instanceId = formData.get('instanceId') as string
+  const token = formData.get('token') as string
+  const clientToken = formData.get('clientToken') as string
+  const webhookSecret = randomUUID()
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('whatsapp_instancias')
+    .insert({
+      apelido,
+      telefone,
+      instance_id: instanceId,
+      token,
+      client_token: clientToken,
+      webhook_secret: webhookSecret,
+    })
+    .select('id')
+    .single()
+
+  if (error) return { error: error.message, webhookUrl: null }
+
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/zapi/${data.id}?secret=${webhookSecret}`
+  return { error: null, webhookUrl }
+}
+
+export async function removerInstanciaWhatsapp(id: string) {
+  const supabase = await createServerClient()
+  const { data: { user: usuarioLogado } } = await supabase.auth.getUser()
+  if (usuarioLogado?.app_metadata?.role !== 'admin') {
+    return { error: 'Não autorizado' }
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('whatsapp_instancias').delete().eq('id', id)
+  if (error) return { error: error.message }
+  return { error: null }
 }
