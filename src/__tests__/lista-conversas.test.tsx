@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ListaConversas } from '@/components/whatsapp/lista-conversas'
 import type { WhatsappConversa, WhatsappInstancia } from '@/lib/types'
@@ -34,8 +34,10 @@ describe('ListaConversas', () => {
     render(
       <ListaConversas conversas={conversas} instancias={instancias} conversaSelecionadaId={null} filtroInstanciaId="todos" onSelecionar={jest.fn()} onFiltroChange={jest.fn()} />
     )
-    expect(screen.getByText('WhatsApp Nathan')).toBeInTheDocument()
-    expect(screen.getByText('WhatsApp Sócio')).toBeInTheDocument()
+    const linhaMaria = screen.getByText('Maria').closest('button')!
+    const linhaJoao = screen.getByText('João Silva').closest('button')!
+    expect(within(linhaMaria).getByText('WhatsApp Nathan')).toBeInTheDocument()
+    expect(within(linhaJoao).getByText('WhatsApp Sócio')).toBeInTheDocument()
   })
 
   it('filtra por instância quando filtroInstanciaId não é "todos"', () => {

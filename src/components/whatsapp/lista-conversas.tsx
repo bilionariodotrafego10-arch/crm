@@ -28,7 +28,7 @@ export function ListaConversas({
         >
           <option value="todos">Todos os números</option>
           {instancias.map((i) => (
-            <option key={i.id} value={i.id}>{i.telefone}</option>
+            <option key={i.id} value={i.id}>{i.apelido}</option>
           ))}
         </select>
       </div>
