@@ -45,4 +45,16 @@ describe('BolhaMensagem', () => {
     render(<BolhaMensagem mensagem={{ ...base, direcao: 'recebida', tipo: 'texto', conteudo_texto: 'oi', status_envio: 'enviando' }} />)
     expect(screen.queryByText('Enviando...')).not.toBeInTheDocument()
   })
+
+  it('renderiza a legenda de uma imagem junto com a mídia', () => {
+    render(<BolhaMensagem mensagem={{ ...base, tipo: 'imagem', midia_url: 'https://exemplo.com/foto.jpg', conteudo_texto: 'Print do erro' }} />)
+    expect(screen.getByRole('img')).toBeInTheDocument()
+    expect(screen.getByText('Print do erro')).toBeInTheDocument()
+  })
+
+  it('mostra aviso de mídia indisponível quando midia_url é nulo', () => {
+    render(<BolhaMensagem mensagem={{ ...base, tipo: 'imagem', midia_url: null }} />)
+    expect(screen.getByText('Mídia não disponível')).toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
 })
