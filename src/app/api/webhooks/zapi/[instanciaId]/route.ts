@@ -17,7 +17,14 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     return NextResponse.json({ error: 'não autorizado' }, { status: 401 })
   }
 
-  const payload = await request.json()
+  let payload: unknown
+  try {
+    payload = await request.json()
+  } catch {
+    console.error(`[webhook zapi] payload malformado para instância ${params.instanciaId}`)
+    return NextResponse.json({ error: 'payload inválido' }, { status: 400 })
+  }
+
   const mensagem = extrairMensagemRecebida(payload)
   if (!mensagem) {
     // Evento que não é mensagem recebida (status, confirmação, etc.) — ignorado.
