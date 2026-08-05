@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useCidades } from '@/hooks/use-cidades'
+import { useWhatsappInstancias } from '@/hooks/use-whatsapp-instancias'
+import { FormularioInstancia } from '@/components/whatsapp/formulario-instancia'
 import { convidarUsuario, removerUsuario, trocarSenha } from './actions'
 
 interface Usuario {
@@ -12,6 +14,7 @@ interface Usuario {
 
 export function ConfigClient({ usuariosIniciais }: { usuariosIniciais: Usuario[] }) {
   const { cidades, createCidade, deleteCidade } = useCidades()
+  const { instancias, refetch: refetchInstancias } = useWhatsappInstancias()
   const [usuarios] = useState<Usuario[]>(usuariosIniciais)
   const [mensagem, setMensagem] = useState('')
   const [novaCidade, setNovaCidade] = useState({ nome: '', estado: '' })
@@ -88,6 +91,8 @@ export function ConfigClient({ usuariosIniciais }: { usuariosIniciais: Usuario[]
           ))}
         </div>
       </section>
+
+      <FormularioInstancia instancias={instancias} onChange={refetchInstancias} />
 
       {/* Gerenciar cidades */}
       <section className="space-y-3">
