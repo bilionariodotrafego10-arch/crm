@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { isIPv4 } from 'net'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const TAMANHO_MAXIMO_BYTES = 16 * 1024 * 1024 // 16MB, mesmo limite do bucket whatsapp-midia (migração 004)
@@ -16,16 +17,20 @@ function origemEhSegura(urlOrigem: string): boolean {
   const host = url.hostname.toLowerCase()
   if (host === 'localhost' || host === '0.0.0.0') return false
 
-  const partesIPv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (partesIPv4) {
-    const a = Number(partesIPv4[1])
-    const b = Number(partesIPv4[2])
+  // new URL() sempre envolve literais IPv6 em colchetes (ex: "[::1]").
+  // Rejeitamos qualquer literal IPv6 por completo: mídia legítima da Z-API
+  // não é servida por IP literal, e IPv6 tem formas equivalentes demais
+  // (::1, ::ffff:127.0.0.1, fe80::, etc.) para validar com segurança via
+  // comparação simples de string.
+  if (host.startsWith('[')) return false
+
+  if (isIPv4(host)) {
+    const [a, b] = host.split('.').map(Number)
     if (a === 127 || a === 10 || a === 0) return false
     if (a === 172 && b >= 16 && b <= 31) return false
     if (a === 192 && b === 168) return false
     if (a === 169 && b === 254) return false
   }
-  if (host === '::1' || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return false
 
   return true
 }
@@ -53,9 +58,8 @@ export async function baixarEArmazenarMidia(
 
   const contentTypeRecebido = resposta.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
   const prefixoEsperado = tipo === 'imagem' ? 'image/' : 'audio/'
-  const contentType = contentTypeRecebido?.startsWith(prefixoEsperado)
-    ? contentTypeRecebido
-    : (tipo === 'imagem' ? 'image/jpeg' : 'audio/ogg')
+  const tipoValido = contentTypeRecebido?.startsWith(prefixoEsperado) && contentTypeRecebido !== 'image/svg+xml'
+  const contentType = tipoValido ? contentTypeRecebido! : (tipo === 'imagem' ? 'image/jpeg' : 'audio/ogg')
 
   const extensao = contentType.split('/')[1]?.split('+')[0] || (tipo === 'imagem' ? 'jpg' : 'ogg')
   const caminho = `${tipo}/${randomUUID()}.${extensao}`
