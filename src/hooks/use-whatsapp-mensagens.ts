@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { WhatsappMensagem } from '@/lib/types'
 
@@ -8,6 +8,8 @@ export function useWhatsappMensagens(conversaId: string | null) {
   const [mensagens, setMensagens] = useState<WhatsappMensagem[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const conversaIdRef = useRef(conversaId)
+  conversaIdRef.current = conversaId
 
   const resolverMidia = useCallback(async (lista: WhatsappMensagem[]) => {
     return Promise.all(
@@ -20,6 +22,7 @@ export function useWhatsappMensagens(conversaId: string | null) {
   }, [supabase])
 
   const fetchMensagens = useCallback(async () => {
+    const idNoMomentoDoFetch = conversaId
     if (!conversaId) {
       setMensagens([])
       setLoading(false)
@@ -31,7 +34,9 @@ export function useWhatsappMensagens(conversaId: string | null) {
       .select('*')
       .eq('conversa_id', conversaId)
       .order('criado_em', { ascending: true })
-    setMensagens(await resolverMidia(data ?? []))
+    const resolvidas = await resolverMidia(data ?? [])
+    if (conversaIdRef.current !== idNoMomentoDoFetch) return
+    setMensagens(resolvidas)
     setLoading(false)
   }, [supabase, conversaId, resolverMidia])
 
