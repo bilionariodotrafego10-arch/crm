@@ -35,3 +35,34 @@ export interface FollowUp {
   observacao: string
   usuario_id: string | null
 }
+
+export interface WhatsappInstancia {
+  id: string
+  apelido: string
+  telefone: string
+  ativo: boolean
+}
+
+export interface WhatsappConversa {
+  id: string
+  instancia_id: string | null
+  telefone_contato: string
+  nome_contato: string | null
+  lead_id: string | null
+  ultima_mensagem_em: string
+  criado_em: string
+  instancia?: WhatsappInstancia
+  lead?: Pick<Lead, 'id' | 'nome'>
+}
+
+export interface WhatsappMensagem {
+  id: string
+  conversa_id: string
+  direcao: 'recebida' | 'enviada'
+  tipo: 'texto' | 'imagem' | 'audio'
+  conteudo_texto: string | null
+  midia_url: string | null
+  enviado_por: string | null
+  status_envio: 'enviando' | 'enviado' | 'falhou'
+  criado_em: string
+}

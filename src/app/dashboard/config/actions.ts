@@ -1,15 +1,7 @@
 'use server'
 
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function convidarUsuario(formData: FormData) {
   const supabase = await createServerClient()
@@ -21,7 +13,7 @@ export async function convidarUsuario(formData: FormData) {
   const email = formData.get('email') as string
   const role = formData.get('role') as string
   const roleValidado = role === 'admin' ? 'admin' : 'vendedor'
-  const admin = getAdminClient()
+  const admin = createAdminClient()
 
   // inviteUserByEmail só aceita `data` (grava em user_metadata) e `redirectTo`.
   // Não existe opção para gravar app_metadata diretamente no convite, então o
@@ -61,7 +53,7 @@ export async function removerUsuario(userId: string) {
     return { error: 'Não autorizado' }
   }
 
-  const admin = getAdminClient()
+  const admin = createAdminClient()
   const { error } = await admin.auth.admin.deleteUser(userId)
   if (error) return { error: error.message }
   return { error: null }
@@ -82,7 +74,7 @@ export async function listarUsuarios() {
     return []
   }
 
-  const admin = getAdminClient()
+  const admin = createAdminClient()
   const { data, error } = await admin.auth.admin.listUsers()
   if (error) return []
   return data.users.map((u) => ({
