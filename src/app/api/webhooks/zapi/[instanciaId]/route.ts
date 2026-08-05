@@ -68,16 +68,21 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     zapi_message_id: mensagem.messageId,
   }
 
-  // O índice único parcial em zapi_message_id não cobre valores NULL, então
-  // upsert com onConflict só faz sentido quando temos um messageId real —
-  // caso contrário caímos para um insert simples (sem proteção de
-  // idempotência, mas sem quebrar a inserção).
-  if (mensagem.messageId) {
-    await admin
-      .from('whatsapp_mensagens')
-      .upsert(novaMensagem, { onConflict: 'zapi_message_id', ignoreDuplicates: true })
-  } else {
-    await admin.from('whatsapp_mensagens').insert(novaMensagem)
+  // O índice único em zapi_message_id não cobre valores NULL (cada NULL é
+  // distinto), então upsert com onConflict só faz sentido quando temos um
+  // messageId real — caso contrário caímos para um insert simples.
+  const { error: erroMensagem } = mensagem.messageId
+    ? await admin
+        .from('whatsapp_mensagens')
+        .upsert(novaMensagem, { onConflict: 'zapi_message_id', ignoreDuplicates: true })
+    : await admin.from('whatsapp_mensagens').insert(novaMensagem)
+
+  if (erroMensagem) {
+    console.error(
+      `[webhook zapi] falha ao gravar mensagem (conversa ${conversa.id}, instância ${instancia.id}):`,
+      erroMensagem
+    )
+    return NextResponse.json({ error: 'falha ao registrar mensagem' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })
