@@ -26,7 +26,7 @@ const conversaComLead: WhatsappConversa = {
 
 describe('JanelaConversa', () => {
   beforeEach(() => {
-    mockUseWhatsappMensagens.mockReturnValue({ mensagens: [], loading: false })
+    mockUseWhatsappMensagens.mockReturnValue({ mensagens: [], loading: false, refetch: jest.fn() })
     mockEnviarTexto.mockReset()
     mockEnviarMidia.mockReset()
   })

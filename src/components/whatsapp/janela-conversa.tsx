@@ -12,35 +12,54 @@ interface JanelaConversaProps {
 }
 
 export function JanelaConversa({ conversa, onCadastrarLead }: JanelaConversaProps) {
-  const { mensagens, loading } = useWhatsappMensagens(conversa.id)
+  const { mensagens, loading, refetch } = useWhatsappMensagens(conversa.id)
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const inputArquivoRef = useRef<HTMLInputElement>(null)
 
   const handleEnviarTexto = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!texto.trim()) return
     setEnviando(true)
-    const formData = new FormData()
-    formData.set('conversaId', conversa.id)
-    formData.set('texto', texto)
-    await enviarMensagemTexto(formData)
-    setTexto('')
-    setEnviando(false)
+    try {
+      const formData = new FormData()
+      formData.set('conversaId', conversa.id)
+      formData.set('texto', texto)
+      const resultado = await enviarMensagemTexto(formData)
+      if (resultado?.error) {
+        setErro('Não foi possível enviar a mensagem. Tente novamente.')
+      } else {
+        setErro(null)
+        setTexto('')
+      }
+    } catch {
+      setErro('Não foi possível enviar a mensagem. Tente novamente.')
+    } finally {
+      setEnviando(false)
+      await refetch()
+    }
   }
 
   const handleAnexar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0]
     if (!arquivo) return
     setEnviando(true)
-    const tipo = arquivo.type.startsWith('image/') ? 'imagem' : 'audio'
-    const formData = new FormData()
-    formData.set('conversaId', conversa.id)
-    formData.set('tipo', tipo)
-    formData.set('arquivo', arquivo)
-    await enviarMensagemMidia(formData)
-    setEnviando(false)
-    if (inputArquivoRef.current) inputArquivoRef.current.value = ''
+    try {
+      const tipo = arquivo.type.startsWith('image/') ? 'imagem' : 'audio'
+      const formData = new FormData()
+      formData.set('conversaId', conversa.id)
+      formData.set('tipo', tipo)
+      formData.set('arquivo', arquivo)
+      const resultado = await enviarMensagemMidia(formData)
+      setErro(resultado?.error ? 'Não foi possível enviar a mídia. Tente novamente.' : null)
+    } catch {
+      setErro('Não foi possível enviar a mídia. Tente novamente.')
+    } finally {
+      setEnviando(false)
+      if (inputArquivoRef.current) inputArquivoRef.current.value = ''
+      await refetch()
+    }
   }
 
   return (
@@ -67,6 +86,12 @@ export function JanelaConversa({ conversa, onCadastrarLead }: JanelaConversaProp
         )}
       </div>
 
+      {erro && (
+        <div className="mx-3 mb-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
+          <p className="text-xs text-destructive">{erro}</p>
+        </div>
+      )}
+
       <form onSubmit={handleEnviarTexto} className="p-3 border-t border-border flex gap-2 items-center">
         <input
           ref={inputArquivoRef}
@@ -81,7 +106,7 @@ export function JanelaConversa({ conversa, onCadastrarLead }: JanelaConversaProp
         </label>
         <input
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => { setTexto(e.target.value); if (erro) setErro(null) }}
           placeholder="Digite uma mensagem..."
           className="flex-1 px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
