@@ -18,6 +18,11 @@ export function ListaConversas({
     ? conversas
     : conversas.filter((c) => c.instancia_id === filtroInstanciaId)
 
+  // Números desativados continuam aparecendo em conversas antigas (histórico
+  // preservado), mas somem do dropdown de filtro — não faz sentido escolher
+  // filtrar por um número que não envia/recebe mais.
+  const instanciasAtivas = instancias.filter((i) => i.ativo)
+
   return (
     <div className="w-72 border-r border-border flex flex-col">
       <div className="p-3 border-b border-border">
@@ -27,7 +32,7 @@ export function ListaConversas({
           className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="todos">Todos os números</option>
-          {instancias.map((i) => (
+          {instanciasAtivas.map((i) => (
             <option key={i.id} value={i.id}>{i.apelido}</option>
           ))}
         </select>

@@ -64,4 +64,17 @@ describe('ListaConversas', () => {
     )
     expect(screen.getByText('Nenhuma conversa ainda')).toBeInTheDocument()
   })
+
+  it('não lista instâncias inativas no dropdown de filtro', () => {
+    const instanciasComInativa: WhatsappInstancia[] = [
+      ...instancias,
+      { id: 'i3', apelido: 'WhatsApp Antigo', telefone: '5511333333333', ativo: false },
+    ]
+    render(
+      <ListaConversas conversas={conversas} instancias={instanciasComInativa} conversaSelecionadaId={null} filtroInstanciaId="todos" onSelecionar={jest.fn()} onFiltroChange={jest.fn()} />
+    )
+    const select = screen.getByRole('combobox')
+    expect(within(select).getByText('WhatsApp Nathan')).toBeInTheDocument()
+    expect(within(select).queryByText('WhatsApp Antigo')).not.toBeInTheDocument()
+  })
 })

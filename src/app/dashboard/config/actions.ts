@@ -92,6 +92,10 @@ export async function criarInstanciaWhatsapp(formData: FormData) {
     return { error: 'Não autorizado', webhookUrl: null }
   }
 
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    return { error: 'NEXT_PUBLIC_APP_URL não configurada no ambiente', webhookUrl: null }
+  }
+
   const apelido = formData.get('apelido') as string
   const telefone = formData.get('telefone') as string
   const instanceId = formData.get('instanceId') as string
@@ -127,7 +131,13 @@ export async function removerInstanciaWhatsapp(id: string) {
   }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('whatsapp_instancias').delete().eq('id', id)
+  // Desativação (soft delete), não remoção física: a FK de whatsapp_conversas
+  // é ON DELETE SET NULL, então um delete físico deixaria conversas com
+  // instancia_id null (impossíveis de reativar) e, como UNIQUE trata NULLs
+  // como distintos, reconectar o mesmo número duplicaria threads de contatos
+  // já existentes. A coluna `ativo` existe justamente para isso — o webhook
+  // já checa `instancia.ativo` antes de aceitar mensagens.
+  const { error } = await admin.from('whatsapp_instancias').update({ ativo: false }).eq('id', id)
   if (error) return { error: error.message }
   return { error: null }
 }
