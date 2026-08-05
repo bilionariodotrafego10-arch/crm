@@ -22,6 +22,7 @@ describe('extrairMensagemRecebida', () => {
       phone: '5544999999999',
       momment: 1632228638000,
       senderName: 'Maria',
+      messageId: 'msg-1',
       text: { message: 'Oi, quero saber mais sobre o curso' },
     }
     expect(extrairMensagemRecebida(payload)).toEqual({
@@ -31,6 +32,7 @@ describe('extrairMensagemRecebida', () => {
       conteudoTexto: 'Oi, quero saber mais sobre o curso',
       midiaUrl: null,
       momento: new Date(1632228638000),
+      messageId: 'msg-1',
     })
   })
 
@@ -41,6 +43,7 @@ describe('extrairMensagemRecebida', () => {
       phone: '5544999999999',
       momment: 1632228828000,
       senderName: 'Maria',
+      messageId: 'msg-2',
       image: { imageUrl: 'https://z-api.example/img.jpg', caption: 'Print do erro' },
     }
     expect(extrairMensagemRecebida(payload)).toEqual({
@@ -50,6 +53,7 @@ describe('extrairMensagemRecebida', () => {
       conteudoTexto: 'Print do erro',
       midiaUrl: 'https://z-api.example/img.jpg',
       momento: new Date(1632228828000),
+      messageId: 'msg-2',
     })
   })
 
@@ -69,7 +73,20 @@ describe('extrairMensagemRecebida', () => {
       conteudoTexto: null,
       midiaUrl: 'https://z-api.example/audio.ogg',
       momento: new Date(1632228849000),
+      messageId: null,
     })
+  })
+
+  it('ignora mensagens de grupo (isGroup true)', () => {
+    const payload = {
+      type: 'ReceivedCallback',
+      fromMe: false,
+      isGroup: true,
+      phone: '5544999999999',
+      momment: 1632228638000,
+      text: { message: 'Oi pessoal' },
+    }
+    expect(extrairMensagemRecebida(payload)).toBeNull()
   })
 
   it('ignora mensagens enviadas por mim mesmo (fromMe true)', () => {

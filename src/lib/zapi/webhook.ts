@@ -15,6 +15,7 @@ export interface MensagemRecebidaZApi {
   conteudoTexto: string | null
   midiaUrl: string | null
   momento: Date
+  messageId: string | null
 }
 
 export function extrairMensagemRecebida(payload: unknown): MensagemRecebidaZApi | null {
@@ -23,25 +24,30 @@ export function extrairMensagemRecebida(payload: unknown): MensagemRecebidaZApi 
 
   if (p.type !== 'ReceivedCallback') return null
   if (p.fromMe === true) return null
+  if (p.isGroup === true) return null
   if (typeof p.phone !== 'string') return null
   if (typeof p.momment !== 'number') return null
 
   const nomeContato = typeof p.senderName === 'string' ? p.senderName : null
   const momento = new Date(p.momment)
+  // Campo não confirmado 100% via docs ao vivo — tratado defensivamente:
+  // se ausente ou de outro tipo, cai para null (idempotência apenas
+  // "melhor esforço" nesse caso, sem quebrar nada existente).
+  const messageId = typeof p.messageId === 'string' ? p.messageId : null
 
   const texto = p.text as { message?: string } | undefined
   if (texto && typeof texto.message === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'texto', conteudoTexto: texto.message, midiaUrl: null, momento }
+    return { telefone: p.phone, nomeContato, tipo: 'texto', conteudoTexto: texto.message, midiaUrl: null, momento, messageId }
   }
 
   const imagem = p.image as { imageUrl?: string; caption?: string } | undefined
   if (imagem && typeof imagem.imageUrl === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'imagem', conteudoTexto: imagem.caption || null, midiaUrl: imagem.imageUrl, momento }
+    return { telefone: p.phone, nomeContato, tipo: 'imagem', conteudoTexto: imagem.caption || null, midiaUrl: imagem.imageUrl, momento, messageId }
   }
 
   const audio = p.audio as { audioUrl?: string } | undefined
   if (audio && typeof audio.audioUrl === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'audio', conteudoTexto: null, midiaUrl: audio.audioUrl, momento }
+    return { telefone: p.phone, nomeContato, tipo: 'audio', conteudoTexto: null, midiaUrl: audio.audioUrl, momento, messageId }
   }
 
   return null

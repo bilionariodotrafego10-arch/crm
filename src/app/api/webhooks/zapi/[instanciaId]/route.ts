@@ -37,7 +37,10 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
       {
         instancia_id: instancia.id,
         telefone_contato: mensagem.telefone,
-        nome_contato: mensagem.nomeContato,
+        // Não sobrescreve um nome já conhecido com null: muitos payloads da
+        // Z-API vêm sem senderName, e uma mensagem posterior sem nome não
+        // deve apagar o nome capturado numa mensagem anterior.
+        ...(mensagem.nomeContato ? { nome_contato: mensagem.nomeContato } : {}),
         ultima_mensagem_em: mensagem.momento.toISOString(),
       },
       { onConflict: 'instancia_id,telefone_contato' }
@@ -54,15 +57,28 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     midiaCaminho = await baixarEArmazenarMidia(admin, mensagem.midiaUrl, mensagem.tipo as 'imagem' | 'audio')
   }
 
-  await admin.from('whatsapp_mensagens').insert({
+  const novaMensagem = {
     conversa_id: conversa.id,
-    direcao: 'recebida',
+    direcao: 'recebida' as const,
     tipo: mensagem.tipo,
     conteudo_texto: mensagem.conteudoTexto,
     midia_url: midiaCaminho,
-    status_envio: 'enviado',
+    status_envio: 'enviado' as const,
     criado_em: mensagem.momento.toISOString(),
-  })
+    zapi_message_id: mensagem.messageId,
+  }
+
+  // O índice único parcial em zapi_message_id não cobre valores NULL, então
+  // upsert com onConflict só faz sentido quando temos um messageId real —
+  // caso contrário caímos para um insert simples (sem proteção de
+  // idempotência, mas sem quebrar a inserção).
+  if (mensagem.messageId) {
+    await admin
+      .from('whatsapp_mensagens')
+      .upsert(novaMensagem, { onConflict: 'zapi_message_id', ignoreDuplicates: true })
+  } else {
+    await admin.from('whatsapp_mensagens').insert(novaMensagem)
+  }
 
   return NextResponse.json({ ok: true })
 }
