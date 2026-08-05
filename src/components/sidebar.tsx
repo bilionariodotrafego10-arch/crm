@@ -10,6 +10,7 @@ interface SidebarProps {
 
 const navItems = [
   { href: '/dashboard/follow-up', label: 'Follow-up' },
+  { href: '/dashboard/whatsapp', label: 'WhatsApp' },
   { href: '/dashboard/cidades', label: 'Cidades' },
   { href: '/dashboard/alunos', label: 'Alunos' },
 ]

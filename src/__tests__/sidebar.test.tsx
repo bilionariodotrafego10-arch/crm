@@ -10,6 +10,7 @@ describe('Sidebar', () => {
   it('exibe itens de navegação para vendedor', () => {
     render(<Sidebar role="vendedor" />)
     expect(screen.getByText('Follow-up')).toBeInTheDocument()
+    expect(screen.getByText('WhatsApp')).toBeInTheDocument()
     expect(screen.getByText('Cidades')).toBeInTheDocument()
     expect(screen.getByText('Alunos')).toBeInTheDocument()
     expect(screen.queryByText('Configurações')).not.toBeInTheDocument()
