@@ -16,10 +16,10 @@ async function buscarInfoEnvio(conversaId: string): Promise<{ telefone: string; 
 
   const { data: instancia } = await admin
     .from('whatsapp_instancias')
-    .select('instance_id, token, client_token')
+    .select('instance_id, token, client_token, ativo')
     .eq('id', conversa.instancia_id)
     .single()
-  if (!instancia) return null
+  if (!instancia || !instancia.ativo) return null
 
   return { telefone: conversa.telefone_contato, credenciais: instancia }
 }
@@ -28,33 +28,33 @@ export async function enviarMensagemTexto(formData: FormData) {
   const conversaId = formData.get('conversaId') as string
   const texto = formData.get('texto') as string
 
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+
   const info = await buscarInfoEnvio(conversaId)
   if (!info) return { error: 'Conversa sem número de WhatsApp ativo' }
 
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: mensagem } = await supabase
+  const { data: mensagem, error: erroInsercao } = await supabase
     .from('whatsapp_mensagens')
     .insert({
       conversa_id: conversaId,
       direcao: 'enviada',
       tipo: 'texto',
       conteudo_texto: texto,
-      enviado_por: user?.id,
+      enviado_por: user.id,
       status_envio: 'enviando',
     })
     .select('id')
     .single()
+  if (erroInsercao || !mensagem) return { error: 'Não foi possível registrar a mensagem' }
 
   const resultado = await enviarTexto(info.credenciais, info.telefone, texto)
 
-  if (mensagem) {
-    await supabase
-      .from('whatsapp_mensagens')
-      .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
-      .eq('id', mensagem.id)
-  }
+  await supabase
+    .from('whatsapp_mensagens')
+    .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
+    .eq('id', mensagem.id)
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)
 
@@ -66,11 +66,12 @@ export async function enviarMensagemMidia(formData: FormData) {
   const tipo = formData.get('tipo') as 'imagem' | 'audio'
   const arquivo = formData.get('arquivo') as File
 
-  const info = await buscarInfoEnvio(conversaId)
-  if (!info) return { error: 'Conversa sem número de WhatsApp ativo' }
-
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+
+  const info = await buscarInfoEnvio(conversaId)
+  if (!info) return { error: 'Conversa sem número de WhatsApp ativo' }
 
   const extensao = tipo === 'imagem' ? 'jpg' : 'ogg'
   const caminho = `${tipo}/${randomUUID()}.${extensao}`
@@ -82,29 +83,28 @@ export async function enviarMensagemMidia(formData: FormData) {
   const { data: urlAssinada } = await supabase.storage.from('whatsapp-midia').createSignedUrl(caminho, 3600)
   if (!urlAssinada) return { error: 'Não foi possível gerar URL da mídia' }
 
-  const { data: mensagem } = await supabase
+  const { data: mensagem, error: erroInsercao } = await supabase
     .from('whatsapp_mensagens')
     .insert({
       conversa_id: conversaId,
       direcao: 'enviada',
       tipo,
       midia_url: caminho,
-      enviado_por: user?.id,
+      enviado_por: user.id,
       status_envio: 'enviando',
     })
     .select('id')
     .single()
+  if (erroInsercao || !mensagem) return { error: 'Não foi possível registrar a mensagem' }
 
   const resultado = tipo === 'imagem'
     ? await enviarImagem(info.credenciais, info.telefone, urlAssinada.signedUrl)
     : await enviarAudio(info.credenciais, info.telefone, urlAssinada.signedUrl)
 
-  if (mensagem) {
-    await supabase
-      .from('whatsapp_mensagens')
-      .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
-      .eq('id', mensagem.id)
-  }
+  await supabase
+    .from('whatsapp_mensagens')
+    .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
+    .eq('id', mensagem.id)
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)
 
