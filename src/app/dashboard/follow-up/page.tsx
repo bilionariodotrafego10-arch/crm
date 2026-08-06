@@ -6,6 +6,7 @@ import { useCidades } from '@/hooks/use-cidades'
 import { BarraFiltros } from '@/components/barra-filtros'
 import { TabelaLeads } from '@/components/tabela-leads'
 import { FormularioLead } from '@/components/formulario-lead'
+import { BotaoExportarCSV } from '@/components/botao-exportar-csv'
 import { getDateRange, type DateFilter } from '@/lib/date-filters'
 import type { Lead } from '@/lib/types'
 
@@ -43,6 +44,15 @@ export default function FollowUpPage() {
     return resultado
   }, [leads, filtroData, filtroStatus, dataInicio, dataFim])
 
+  const dadosCSV = leadsFiltrados.map((l) => ({
+    nome: l.nome,
+    telefone: l.telefone,
+    email: l.email ?? '',
+    cidade: l.cidade?.nome ?? '',
+  }))
+
+  const nomeArquivoCSV = `leads-follow-up-${new Date().toISOString().split('T')[0]}.csv`
+
   const handleSave = async (data: Omit<Lead, 'id' | 'criado_em' | 'cidade' | 'criado_por'>) => {
     if (leadEditando) {
       await updateLead(leadEditando.id, data)
@@ -64,18 +74,25 @@ export default function FollowUpPage() {
         </button>
       </div>
 
-      <BarraFiltros
-        filtroData={filtroData}
-        filtroStatus={filtroStatus}
-        dataInicio={dataInicio}
-        dataFim={dataFim}
-        onFilterChange={({ filtroData: fd, filtroStatus: fs, dataInicio: di, dataFim: df }) => {
-          setFiltroData(fd)
-          setFiltroStatus(fs)
-          setDataInicio(di)
-          setDataFim(df)
-        }}
-      />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <BarraFiltros
+          filtroData={filtroData}
+          filtroStatus={filtroStatus}
+          dataInicio={dataInicio}
+          dataFim={dataFim}
+          onFilterChange={({ filtroData: fd, filtroStatus: fs, dataInicio: di, dataFim: df }) => {
+            setFiltroData(fd)
+            setFiltroStatus(fs)
+            setDataInicio(di)
+            setDataFim(df)
+          }}
+        />
+        <BotaoExportarCSV
+          dados={dadosCSV}
+          colunas={['nome', 'telefone', 'email', 'cidade']}
+          nomeArquivo={nomeArquivoCSV}
+        />
+      </div>
 
       {loading ? (
         <p className="text-muted-foreground">Carregando...</p>
