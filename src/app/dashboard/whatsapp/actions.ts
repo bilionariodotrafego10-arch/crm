@@ -35,34 +35,25 @@ export async function enviarMensagemTexto(formData: FormData) {
   const info = await buscarInfoEnvio(conversaId)
   if (!info) return { error: 'Conversa sem número de WhatsApp ativo' }
 
-  const { data: mensagem, error: erroInsercao } = await supabase
-    .from('whatsapp_mensagens')
-    .insert({
-      conversa_id: conversaId,
-      direcao: 'enviada',
-      tipo: 'texto',
-      conteudo_texto: texto,
-      enviado_por: user.id,
-      status_envio: 'enviando',
-    })
-    .select('id')
-    .single()
-  if (erroInsercao || !mensagem) return { error: 'Não foi possível registrar a mensagem' }
-
   const resultado = await enviarTexto(info.credenciais, info.telefone, texto)
 
-  // Grava o zapi_message_id via admin: authenticated só tem GRANT de UPDATE
-  // na coluna status_envio (ver migração 003), e o messageId aqui é o que
-  // permite ao webhook (evento fromMe) reconhecer que essa mensagem já foi
-  // registrada por este envio, em vez de duplicá-la.
-  const admin = createAdminClient()
-  await admin
-    .from('whatsapp_mensagens')
-    .update({
-      status_envio: resultado.ok ? 'enviado' : 'falhou',
-      ...(resultado.ok ? { zapi_message_id: resultado.data.messageId } : {}),
-    })
-    .eq('id', mensagem.id)
+  // Grava a mensagem só depois da Z-API responder, já com zapi_message_id
+  // preenchido (quando deu certo): inserir antes e completar via UPDATE
+  // separado deixava uma janela em que o webhook do evento fromMe (eco da
+  // própria mensagem enviada) chegava primeiro, não encontrava a linha com
+  // esse zapi_message_id ainda, e inseria uma linha duplicada — daí o UPDATE
+  // que só faltava carimbar o id caía num choque de unicidade e falhava
+  // (silenciosamente, pois o erro não era checado).
+  const { error: erroInsercao } = await supabase.from('whatsapp_mensagens').insert({
+    conversa_id: conversaId,
+    direcao: 'enviada',
+    tipo: 'texto',
+    conteudo_texto: texto,
+    enviado_por: user.id,
+    status_envio: resultado.ok ? 'enviado' : 'falhou',
+    zapi_message_id: resultado.ok ? resultado.data.messageId : null,
+  })
+  if (erroInsercao) return { error: 'Não foi possível registrar a mensagem' }
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)
 
@@ -91,32 +82,23 @@ export async function enviarMensagemMidia(formData: FormData) {
   const { data: urlAssinada } = await supabase.storage.from('whatsapp-midia').createSignedUrl(caminho, 3600)
   if (!urlAssinada) return { error: 'Não foi possível gerar URL da mídia' }
 
-  const { data: mensagem, error: erroInsercao } = await supabase
-    .from('whatsapp_mensagens')
-    .insert({
-      conversa_id: conversaId,
-      direcao: 'enviada',
-      tipo,
-      midia_url: caminho,
-      enviado_por: user.id,
-      status_envio: 'enviando',
-    })
-    .select('id')
-    .single()
-  if (erroInsercao || !mensagem) return { error: 'Não foi possível registrar a mensagem' }
-
   const resultado = tipo === 'imagem'
     ? await enviarImagem(info.credenciais, info.telefone, urlAssinada.signedUrl)
     : await enviarAudio(info.credenciais, info.telefone, urlAssinada.signedUrl)
 
-  const admin = createAdminClient()
-  await admin
-    .from('whatsapp_mensagens')
-    .update({
-      status_envio: resultado.ok ? 'enviado' : 'falhou',
-      ...(resultado.ok ? { zapi_message_id: resultado.data.messageId } : {}),
-    })
-    .eq('id', mensagem.id)
+  // Mesmo motivo do enviarMensagemTexto: insere só depois da Z-API responder,
+  // já com zapi_message_id preenchido, pra não deixar janela de corrida com
+  // o webhook do evento fromMe (eco da própria mensagem enviada).
+  const { error: erroInsercao } = await supabase.from('whatsapp_mensagens').insert({
+    conversa_id: conversaId,
+    direcao: 'enviada',
+    tipo,
+    midia_url: caminho,
+    enviado_por: user.id,
+    status_envio: resultado.ok ? 'enviado' : 'falhou',
+    zapi_message_id: resultado.ok ? resultado.data.messageId : null,
+  })
+  if (erroInsercao) return { error: 'Não foi possível registrar a mensagem' }
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)
 
