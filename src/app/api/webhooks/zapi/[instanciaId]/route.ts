@@ -14,6 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     .maybeSingle()
 
   if (!instancia || !instancia.ativo || !validarAssinaturaWebhook(secretRecebido, instancia.webhook_secret)) {
+    console.error(`[webhook zapi][DEBUG] requisição rejeitada na autenticação para instância ${params.instanciaId}`)
     return NextResponse.json({ error: 'não autorizado' }, { status: 401 })
   }
 
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     console.error(`[webhook zapi] payload malformado para instância ${params.instanciaId}`)
     return NextResponse.json({ error: 'payload inválido' }, { status: 400 })
   }
+
+  // eslint-disable-next-line no-console
+  console.log(`[webhook zapi][DEBUG] payload recebido:`, JSON.stringify(payload))
 
   const mensagem = extrairMensagemWebhook(payload)
   if (!mensagem) {
