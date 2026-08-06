@@ -26,8 +26,18 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     return NextResponse.json({ error: 'payload inválido' }, { status: 400 })
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`[webhook zapi][DEBUG] payload recebido:`, JSON.stringify(payload))
+  // Log temporário só com metadados estruturais (sem conteúdo de mensagem
+  // nem telefone) — usado pra diagnosticar por que eventos fromMe não
+  // estavam chegando. Remover depois de confirmado o formato do payload.
+  if (typeof payload === 'object' && payload !== null) {
+    const p = payload as Record<string, unknown>
+    console.log('[webhook zapi][DEBUG] evento recebido:', {
+      type: p.type,
+      fromMe: p.fromMe,
+      isGroup: p.isGroup,
+      chaves: Object.keys(p),
+    })
+  }
 
   const mensagem = extrairMensagemWebhook(payload)
   if (!mensagem) {
