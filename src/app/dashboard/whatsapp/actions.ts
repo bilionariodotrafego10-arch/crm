@@ -51,9 +51,17 @@ export async function enviarMensagemTexto(formData: FormData) {
 
   const resultado = await enviarTexto(info.credenciais, info.telefone, texto)
 
-  await supabase
+  // Grava o zapi_message_id via admin: authenticated só tem GRANT de UPDATE
+  // na coluna status_envio (ver migração 003), e o messageId aqui é o que
+  // permite ao webhook (evento fromMe) reconhecer que essa mensagem já foi
+  // registrada por este envio, em vez de duplicá-la.
+  const admin = createAdminClient()
+  await admin
     .from('whatsapp_mensagens')
-    .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
+    .update({
+      status_envio: resultado.ok ? 'enviado' : 'falhou',
+      ...(resultado.ok ? { zapi_message_id: resultado.data.messageId } : {}),
+    })
     .eq('id', mensagem.id)
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)
@@ -101,9 +109,13 @@ export async function enviarMensagemMidia(formData: FormData) {
     ? await enviarImagem(info.credenciais, info.telefone, urlAssinada.signedUrl)
     : await enviarAudio(info.credenciais, info.telefone, urlAssinada.signedUrl)
 
-  await supabase
+  const admin = createAdminClient()
+  await admin
     .from('whatsapp_mensagens')
-    .update({ status_envio: resultado.ok ? 'enviado' : 'falhou' })
+    .update({
+      status_envio: resultado.ok ? 'enviado' : 'falhou',
+      ...(resultado.ok ? { zapi_message_id: resultado.data.messageId } : {}),
+    })
     .eq('id', mensagem.id)
 
   await supabase.from('whatsapp_conversas').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', conversaId)

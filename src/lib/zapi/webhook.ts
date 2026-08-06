@@ -8,7 +8,7 @@ export function validarAssinaturaWebhook(secretRecebido: string | null, secretEs
   return timingSafeEqual(a, b)
 }
 
-export interface MensagemRecebidaZApi {
+export interface MensagemWebhookZApi {
   telefone: string
   nomeContato: string | null
   tipo: 'texto' | 'imagem' | 'audio'
@@ -16,18 +16,19 @@ export interface MensagemRecebidaZApi {
   midiaUrl: string | null
   momento: Date
   messageId: string | null
+  deMim: boolean
 }
 
-export function extrairMensagemRecebida(payload: unknown): MensagemRecebidaZApi | null {
+export function extrairMensagemWebhook(payload: unknown): MensagemWebhookZApi | null {
   if (typeof payload !== 'object' || payload === null) return null
   const p = payload as Record<string, unknown>
 
   if (p.type !== 'ReceivedCallback') return null
-  if (p.fromMe === true) return null
   if (p.isGroup === true) return null
   if (typeof p.phone !== 'string') return null
   if (typeof p.momment !== 'number') return null
 
+  const deMim = p.fromMe === true
   const nomeContato = typeof p.senderName === 'string' ? p.senderName : null
   const momento = new Date(p.momment)
   // Campo não confirmado 100% via docs ao vivo — tratado defensivamente:
@@ -37,17 +38,17 @@ export function extrairMensagemRecebida(payload: unknown): MensagemRecebidaZApi 
 
   const texto = p.text as { message?: string } | undefined
   if (texto && typeof texto.message === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'texto', conteudoTexto: texto.message, midiaUrl: null, momento, messageId }
+    return { telefone: p.phone, nomeContato, tipo: 'texto', conteudoTexto: texto.message, midiaUrl: null, momento, messageId, deMim }
   }
 
   const imagem = p.image as { imageUrl?: string; caption?: string } | undefined
   if (imagem && typeof imagem.imageUrl === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'imagem', conteudoTexto: imagem.caption || null, midiaUrl: imagem.imageUrl, momento, messageId }
+    return { telefone: p.phone, nomeContato, tipo: 'imagem', conteudoTexto: imagem.caption || null, midiaUrl: imagem.imageUrl, momento, messageId, deMim }
   }
 
   const audio = p.audio as { audioUrl?: string } | undefined
   if (audio && typeof audio.audioUrl === 'string') {
-    return { telefone: p.phone, nomeContato, tipo: 'audio', conteudoTexto: null, midiaUrl: audio.audioUrl, momento, messageId }
+    return { telefone: p.phone, nomeContato, tipo: 'audio', conteudoTexto: null, midiaUrl: audio.audioUrl, momento, messageId, deMim }
   }
 
   return null

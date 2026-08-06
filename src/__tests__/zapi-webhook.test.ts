@@ -1,4 +1,4 @@
-import { validarAssinaturaWebhook, extrairMensagemRecebida } from '@/lib/zapi/webhook'
+import { validarAssinaturaWebhook, extrairMensagemWebhook } from '@/lib/zapi/webhook'
 
 describe('validarAssinaturaWebhook', () => {
   it('retorna true quando o segredo bate', () => {
@@ -14,8 +14,8 @@ describe('validarAssinaturaWebhook', () => {
   })
 })
 
-describe('extrairMensagemRecebida', () => {
-  it('extrai mensagem de texto', () => {
+describe('extrairMensagemWebhook', () => {
+  it('extrai mensagem de texto recebida do contato', () => {
     const payload = {
       type: 'ReceivedCallback',
       fromMe: false,
@@ -25,7 +25,7 @@ describe('extrairMensagemRecebida', () => {
       messageId: 'msg-1',
       text: { message: 'Oi, quero saber mais sobre o curso' },
     }
-    expect(extrairMensagemRecebida(payload)).toEqual({
+    expect(extrairMensagemWebhook(payload)).toEqual({
       telefone: '5544999999999',
       nomeContato: 'Maria',
       tipo: 'texto',
@@ -33,6 +33,7 @@ describe('extrairMensagemRecebida', () => {
       midiaUrl: null,
       momento: new Date(1632228638000),
       messageId: 'msg-1',
+      deMim: false,
     })
   })
 
@@ -46,7 +47,7 @@ describe('extrairMensagemRecebida', () => {
       messageId: 'msg-2',
       image: { imageUrl: 'https://z-api.example/img.jpg', caption: 'Print do erro' },
     }
-    expect(extrairMensagemRecebida(payload)).toEqual({
+    expect(extrairMensagemWebhook(payload)).toEqual({
       telefone: '5544999999999',
       nomeContato: 'Maria',
       tipo: 'imagem',
@@ -54,6 +55,7 @@ describe('extrairMensagemRecebida', () => {
       midiaUrl: 'https://z-api.example/img.jpg',
       momento: new Date(1632228828000),
       messageId: 'msg-2',
+      deMim: false,
     })
   })
 
@@ -66,7 +68,7 @@ describe('extrairMensagemRecebida', () => {
       senderName: null,
       audio: { audioUrl: 'https://z-api.example/audio.ogg' },
     }
-    expect(extrairMensagemRecebida(payload)).toEqual({
+    expect(extrairMensagemWebhook(payload)).toEqual({
       telefone: '5544999999999',
       nomeContato: null,
       tipo: 'audio',
@@ -74,6 +76,7 @@ describe('extrairMensagemRecebida', () => {
       midiaUrl: 'https://z-api.example/audio.ogg',
       momento: new Date(1632228849000),
       messageId: null,
+      deMim: false,
     })
   })
 
@@ -86,27 +89,37 @@ describe('extrairMensagemRecebida', () => {
       momment: 1632228638000,
       text: { message: 'Oi pessoal' },
     }
-    expect(extrairMensagemRecebida(payload)).toBeNull()
+    expect(extrairMensagemWebhook(payload)).toBeNull()
   })
 
-  it('ignora mensagens enviadas por mim mesmo (fromMe true)', () => {
+  it('extrai mensagem enviada por mim mesmo direto do celular (fromMe true) com deMim=true', () => {
     const payload = {
       type: 'ReceivedCallback',
       fromMe: true,
       phone: '5544999999999',
       momment: 1632228638000,
-      text: { message: 'Oi' },
+      messageId: 'msg-3',
+      text: { message: 'Pode ser pelo Pix' },
     }
-    expect(extrairMensagemRecebida(payload)).toBeNull()
+    expect(extrairMensagemWebhook(payload)).toEqual({
+      telefone: '5544999999999',
+      nomeContato: null,
+      tipo: 'texto',
+      conteudoTexto: 'Pode ser pelo Pix',
+      midiaUrl: null,
+      momento: new Date(1632228638000),
+      messageId: 'msg-3',
+      deMim: true,
+    })
   })
 
   it('ignora eventos que não são de mensagem recebida', () => {
     const payload = { type: 'MessageStatusCallback', phone: '5544999999999' }
-    expect(extrairMensagemRecebida(payload)).toBeNull()
+    expect(extrairMensagemWebhook(payload)).toBeNull()
   })
 
   it('ignora payload malformado sem phone', () => {
     const payload = { type: 'ReceivedCallback', fromMe: false, momment: 123, text: { message: 'oi' } }
-    expect(extrairMensagemRecebida(payload)).toBeNull()
+    expect(extrairMensagemWebhook(payload)).toBeNull()
   })
 })

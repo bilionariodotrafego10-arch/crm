@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { validarAssinaturaWebhook, extrairMensagemRecebida } from '@/lib/zapi/webhook'
+import { validarAssinaturaWebhook, extrairMensagemWebhook } from '@/lib/zapi/webhook'
 import { baixarEArmazenarMidia } from '@/lib/zapi/midia'
 
 export async function POST(request: NextRequest, { params }: { params: { instanciaId: string } }) {
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     return NextResponse.json({ error: 'payload inválido' }, { status: 400 })
   }
 
-  const mensagem = extrairMensagemRecebida(payload)
+  const mensagem = extrairMensagemWebhook(payload)
   if (!mensagem) {
-    // Evento que não é mensagem recebida (status, confirmação, etc.) — ignorado.
+    // Evento que não é mensagem de chat (status, confirmação, etc.) — ignorado.
     return NextResponse.json({ ok: true })
   }
 
@@ -57,9 +57,11 @@ export async function POST(request: NextRequest, { params }: { params: { instanc
     midiaCaminho = await baixarEArmazenarMidia(admin, mensagem.midiaUrl, mensagem.tipo as 'imagem' | 'audio')
   }
 
+  const direcao: 'enviada' | 'recebida' = mensagem.deMim ? 'enviada' : 'recebida'
+
   const novaMensagem = {
     conversa_id: conversa.id,
-    direcao: 'recebida' as const,
+    direcao,
     tipo: mensagem.tipo,
     conteudo_texto: mensagem.conteudoTexto,
     midia_url: midiaCaminho,
