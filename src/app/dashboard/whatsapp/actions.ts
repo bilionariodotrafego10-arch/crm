@@ -3,7 +3,8 @@
 import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { enviarTexto, enviarImagem, enviarAudio, type CredenciaisInstancia } from '@/lib/zapi/cliente'
+import { enviarTexto, enviarImagem, enviarAudio, enviarVideo, enviarDocumento, type CredenciaisInstancia } from '@/lib/zapi/cliente'
+import { EXTENSAO_PADRAO } from '@/lib/zapi/midia'
 
 async function buscarInfoEnvio(conversaId: string): Promise<{ telefone: string; credenciais: CredenciaisInstancia } | null> {
   const admin = createAdminClient()
@@ -62,7 +63,7 @@ export async function enviarMensagemTexto(formData: FormData) {
 
 export async function enviarMensagemMidia(formData: FormData) {
   const conversaId = formData.get('conversaId') as string
-  const tipo = formData.get('tipo') as 'imagem' | 'audio'
+  const tipo = formData.get('tipo') as 'imagem' | 'audio' | 'video' | 'documento'
   const arquivo = formData.get('arquivo') as File
 
   const supabase = await createServerClient()
@@ -72,7 +73,8 @@ export async function enviarMensagemMidia(formData: FormData) {
   const info = await buscarInfoEnvio(conversaId)
   if (!info) return { error: 'Conversa sem número de WhatsApp ativo' }
 
-  const extensao = tipo === 'imagem' ? 'jpg' : 'ogg'
+  const extensaoOriginal = arquivo.name.includes('.') ? arquivo.name.split('.').pop()!.toLowerCase() : ''
+  const extensao = tipo === 'documento' ? extensaoOriginal || EXTENSAO_PADRAO.documento : EXTENSAO_PADRAO[tipo]
   const caminho = `${tipo}/${randomUUID()}.${extensao}`
   const { error: erroUpload } = await supabase.storage
     .from('whatsapp-midia')
@@ -82,9 +84,11 @@ export async function enviarMensagemMidia(formData: FormData) {
   const { data: urlAssinada } = await supabase.storage.from('whatsapp-midia').createSignedUrl(caminho, 3600)
   if (!urlAssinada) return { error: 'Não foi possível gerar URL da mídia' }
 
-  const resultado = tipo === 'imagem'
-    ? await enviarImagem(info.credenciais, info.telefone, urlAssinada.signedUrl)
-    : await enviarAudio(info.credenciais, info.telefone, urlAssinada.signedUrl)
+  const resultado =
+    tipo === 'imagem' ? await enviarImagem(info.credenciais, info.telefone, urlAssinada.signedUrl)
+    : tipo === 'audio' ? await enviarAudio(info.credenciais, info.telefone, urlAssinada.signedUrl)
+    : tipo === 'video' ? await enviarVideo(info.credenciais, info.telefone, urlAssinada.signedUrl)
+    : await enviarDocumento(info.credenciais, info.telefone, urlAssinada.signedUrl, arquivo.name, extensao)
 
   // Mesmo motivo do enviarMensagemTexto: insere só depois da Z-API responder,
   // já com zapi_message_id preenchido, pra não deixar janela de corrida com
@@ -93,6 +97,7 @@ export async function enviarMensagemMidia(formData: FormData) {
     conversa_id: conversaId,
     direcao: 'enviada',
     tipo,
+    conteudo_texto: tipo === 'documento' ? arquivo.name : null,
     midia_url: caminho,
     enviado_por: user.id,
     status_envio: resultado.ok ? 'enviado' : 'falhou',
@@ -105,7 +110,10 @@ export async function enviarMensagemMidia(formData: FormData) {
   return resultado.ok ? { error: null } : { error: resultado.erro }
 }
 
-export async function cadastrarLeadDaConversa(conversaId: string, dados: { nome: string; email: string | null }) {
+export async function cadastrarLeadDaConversa(
+  conversaId: string,
+  dados: { nome: string; email: string | null; cidade_id: string | null; status_venda: 'negociando' | 'pago' }
+) {
   const supabase = await createServerClient()
   const { data: conversa } = await supabase
     .from('whatsapp_conversas')
@@ -120,6 +128,8 @@ export async function cadastrarLeadDaConversa(conversaId: string, dados: { nome:
       nome: dados.nome,
       telefone: conversa.telefone_contato,
       email: dados.email,
+      cidade_id: dados.cidade_id,
+      status_venda: dados.status_venda,
       data_contato: new Date().toISOString().slice(0, 10),
       status: 'respondeu',
     })

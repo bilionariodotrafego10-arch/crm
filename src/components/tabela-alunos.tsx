@@ -24,7 +24,7 @@ export function TabelaAlunos({ alunos, onEdit, onDelete }: TabelaAlunosProps) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              {['Nome', 'Telefone', 'Email', 'Curso', 'Data de Matrícula', 'Ações'].map((col) => (
+              {['Nome', 'Telefone', 'Email', 'Curso', 'Cidade', 'Data de Matrícula', 'Ações'].map((col) => (
                 <th key={col} className="px-4 py-3 text-left font-medium text-muted-foreground">{col}</th>
               ))}
             </tr>
@@ -32,7 +32,7 @@ export function TabelaAlunos({ alunos, onEdit, onDelete }: TabelaAlunosProps) {
           <tbody className="divide-y divide-border">
             {paginados.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum aluno cadastrado
                 </td>
               </tr>
@@ -43,6 +43,9 @@ export function TabelaAlunos({ alunos, onEdit, onDelete }: TabelaAlunosProps) {
                 <td className="px-4 py-3 text-muted-foreground">{aluno.telefone}</td>
                 <td className="px-4 py-3 text-muted-foreground">{aluno.email}</td>
                 <td className="px-4 py-3 text-muted-foreground">{aluno.curso}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {aluno.cidade ? `${aluno.cidade.nome} - ${aluno.cidade.estado}` : '—'}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{formatDateBR(aluno.data_matricula)}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">

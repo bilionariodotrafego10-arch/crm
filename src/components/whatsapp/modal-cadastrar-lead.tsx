@@ -2,18 +2,23 @@
 
 import { useState } from 'react'
 import { cadastrarLeadDaConversa } from '@/app/dashboard/whatsapp/actions'
+import { SeletorCidade } from '@/components/seletor-cidade'
+import type { Cidade, Lead } from '@/lib/types'
 
 interface ModalCadastrarLeadProps {
   conversaId: string
   telefone: string
   nomeSugerido: string | null
+  cidades: Cidade[]
   onSaved: () => void
   onClose: () => void
 }
 
-export function ModalCadastrarLead({ conversaId, telefone, nomeSugerido, onSaved, onClose }: ModalCadastrarLeadProps) {
+export function ModalCadastrarLead({ conversaId, telefone, nomeSugerido, cidades, onSaved, onClose }: ModalCadastrarLeadProps) {
   const [nome, setNome] = useState(nomeSugerido ?? '')
   const [email, setEmail] = useState('')
+  const [cidadeId, setCidadeId] = useState('')
+  const [statusVenda, setStatusVenda] = useState<Lead['status_venda']>('negociando')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -21,7 +26,12 @@ export function ModalCadastrarLead({ conversaId, telefone, nomeSugerido, onSaved
     e.preventDefault()
     setSalvando(true)
     setErro(null)
-    const resultado = await cadastrarLeadDaConversa(conversaId, { nome, email: email || null })
+    const resultado = await cadastrarLeadDaConversa(conversaId, {
+      nome,
+      email: email || null,
+      cidade_id: cidadeId || null,
+      status_venda: statusVenda,
+    })
     setSalvando(false)
     if (resultado.error) {
       setErro('Não foi possível cadastrar o lead. Tente novamente.')
@@ -72,6 +82,24 @@ export function ModalCadastrarLead({ conversaId, telefone, nomeSugerido, onSaved
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="cidade-lead-whatsapp" className="text-sm font-medium text-foreground">Cidade</label>
+            <SeletorCidade id="cidade-lead-whatsapp" value={cidadeId} cidades={cidades} onChange={setCidadeId} />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="negociacao-lead-whatsapp" className="text-sm font-medium text-foreground">Negociação *</label>
+            <select
+              id="negociacao-lead-whatsapp"
+              value={statusVenda}
+              onChange={(e) => setStatusVenda(e.target.value as Lead['status_venda'])}
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="negociando">Em negociação</option>
+              <option value="pago">Pago</option>
+            </select>
           </div>
 
           <div className="flex gap-2 pt-2">

@@ -31,6 +31,18 @@ describe('BolhaMensagem', () => {
     expect(audio).toHaveAttribute('src', 'https://exemplo.com/audio.ogg')
   })
 
+  it('renderiza mensagem de vídeo', () => {
+    const { container } = render(<BolhaMensagem mensagem={{ ...base, tipo: 'video', midia_url: 'https://exemplo.com/video.mp4' }} />)
+    const video = container.querySelector('video')
+    expect(video).toHaveAttribute('src', 'https://exemplo.com/video.mp4')
+  })
+
+  it('renderiza mensagem de documento como link com o nome do arquivo', () => {
+    render(<BolhaMensagem mensagem={{ ...base, tipo: 'documento', midia_url: 'https://exemplo.com/contrato.pdf', conteudo_texto: 'contrato.pdf' }} />)
+    const link = screen.getByRole('link', { name: /contrato\.pdf/i })
+    expect(link).toHaveAttribute('href', 'https://exemplo.com/contrato.pdf')
+  })
+
   it('mostra "Enviando..." só para mensagens enviadas por mim com status enviando', () => {
     render(<BolhaMensagem mensagem={{ ...base, direcao: 'enviada', tipo: 'texto', conteudo_texto: 'oi', status_envio: 'enviando' }} />)
     expect(screen.getByText('Enviando...')).toBeInTheDocument()

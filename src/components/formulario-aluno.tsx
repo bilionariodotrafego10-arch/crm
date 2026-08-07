@@ -1,29 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import type { Aluno } from '@/lib/types'
+import type { Aluno, Cidade } from '@/lib/types'
 import { todayISO } from '@/lib/date-filters'
+import { SeletorCidade } from '@/components/seletor-cidade'
 
 interface FormularioAlunoProps {
   aluno?: Aluno
-  onSave: (data: Omit<Aluno, 'id' | 'criado_em' | 'criado_por'>) => Promise<void>
+  cidades: Cidade[]
+  onSave: (data: Omit<Aluno, 'id' | 'criado_em' | 'criado_por' | 'cidade'>) => Promise<void>
   onClose: () => void
 }
 
-export function FormularioAluno({ aluno, onSave, onClose }: FormularioAlunoProps) {
+export function FormularioAluno({ aluno, cidades, onSave, onClose }: FormularioAlunoProps) {
   const [form, setForm] = useState({
     nome: aluno?.nome ?? '',
     telefone: aluno?.telefone ?? '',
     email: aluno?.email ?? '',
     data_matricula: aluno?.data_matricula ?? todayISO(),
     curso: aluno?.curso ?? '',
+    cidade_id: aluno?.cidade_id ?? '',
   })
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    await onSave(form)
+    await onSave({ ...form, cidade_id: form.cidade_id || null })
     setSaving(false)
     onClose()
   }
@@ -59,6 +62,11 @@ export function FormularioAluno({ aluno, onSave, onClose }: FormularioAlunoProps
               onChange={(e) => setForm({ ...form, data_matricula: e.target.value })}
               className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Cidade</label>
+            <SeletorCidade value={form.cidade_id} cidades={cidades} onChange={(v) => setForm({ ...form, cidade_id: v })} />
           </div>
 
           <div className="flex gap-2 pt-2">

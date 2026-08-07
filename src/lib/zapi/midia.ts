@@ -35,10 +35,31 @@ function origemEhSegura(urlOrigem: string): boolean {
   return true
 }
 
+export type TipoMidia = 'imagem' | 'audio' | 'video' | 'documento'
+
+// Extensão padrão por tipo — usada aqui como fallback quando o content-type
+// da origem não é confiável, e reaproveitada em dashboard/whatsapp/actions.ts
+// como extensão do upload de saída (CRM -> Z-API), pra não duplicar a mesma
+// convenção em dois lugares.
+export const EXTENSAO_PADRAO: Record<TipoMidia, string> = {
+  imagem: 'jpg', audio: 'ogg', video: 'mp4', documento: 'bin',
+}
+
+// documento não tem um prefixo único de content-type (pdf, docx, xlsx, etc.),
+// então não validamos prefixo pra esse tipo — aceitamos o que a Z-API mandar
+// (o bucket "whatsapp-midia" tem sua própria whitelist de mime types, ver
+// migração 008, que funciona como segunda camada de validação no upload).
+const CONFIG_TIPO: Record<TipoMidia, { prefixo: string | null; fallbackContentType: string }> = {
+  imagem: { prefixo: 'image/', fallbackContentType: 'image/jpeg' },
+  audio: { prefixo: 'audio/', fallbackContentType: 'audio/ogg' },
+  video: { prefixo: 'video/', fallbackContentType: 'video/mp4' },
+  documento: { prefixo: null, fallbackContentType: 'application/octet-stream' },
+}
+
 export async function baixarEArmazenarMidia(
   admin: SupabaseClient,
   urlOrigem: string,
-  tipo: 'imagem' | 'audio'
+  tipo: TipoMidia
 ): Promise<string | null> {
   if (!origemEhSegura(urlOrigem)) return null
 
@@ -56,12 +77,12 @@ export async function baixarEArmazenarMidia(
   const bytes = await resposta.arrayBuffer()
   if (bytes.byteLength > TAMANHO_MAXIMO_BYTES) return null
 
+  const { prefixo, fallbackContentType } = CONFIG_TIPO[tipo]
   const contentTypeRecebido = resposta.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
-  const prefixoEsperado = tipo === 'imagem' ? 'image/' : 'audio/'
-  const tipoValido = contentTypeRecebido?.startsWith(prefixoEsperado) && contentTypeRecebido !== 'image/svg+xml'
-  const contentType = tipoValido ? contentTypeRecebido! : (tipo === 'imagem' ? 'image/jpeg' : 'audio/ogg')
+  const tipoValido = contentTypeRecebido && contentTypeRecebido !== 'image/svg+xml' && (prefixo === null || contentTypeRecebido.startsWith(prefixo))
+  const contentType = tipoValido ? contentTypeRecebido! : fallbackContentType
 
-  const extensao = contentType.split('/')[1]?.split('+')[0] || (tipo === 'imagem' ? 'jpg' : 'ogg')
+  const extensao = contentType.split('/')[1]?.split('+')[0] || EXTENSAO_PADRAO[tipo]
   const caminho = `${tipo}/${randomUUID()}.${extensao}`
 
   const { error } = await admin.storage.from('whatsapp-midia').upload(caminho, bytes, { contentType })

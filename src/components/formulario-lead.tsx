@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Lead, Cidade } from '@/lib/types'
 import { todayISO } from '@/lib/date-filters'
+import { SeletorCidade } from '@/components/seletor-cidade'
 
 interface FormularioLeadProps {
   lead?: Lead
@@ -18,6 +19,7 @@ export function FormularioLead({ lead, cidades, onSave, onClose }: FormularioLea
     email: lead?.email ?? '',
     data_contato: lead?.data_contato ?? todayISO(),
     status: lead?.status ?? 'nao_respondeu' as Lead['status'],
+    status_venda: lead?.status_venda ?? 'negociando' as Lead['status_venda'],
     cidade_id: lead?.cidade_id ?? '',
   })
   const [saving, setSaving] = useState(false)
@@ -96,17 +98,20 @@ export function FormularioLead({ lead, cidades, onSave, onClose }: FormularioLea
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Cidade</label>
+            <label className="text-sm font-medium text-foreground">Negociação *</label>
             <select
-              value={form.cidade_id}
-              onChange={(e) => setForm({ ...form, cidade_id: e.target.value })}
+              value={form.status_venda}
+              onChange={(e) => setForm({ ...form, status_venda: e.target.value as Lead['status_venda'] })}
               className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">Sem cidade</option>
-              {cidades.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome} - {c.estado}</option>
-              ))}
+              <option value="negociando">Em negociação</option>
+              <option value="pago">Pago</option>
             </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Cidade</label>
+            <SeletorCidade value={form.cidade_id} cidades={cidades} onChange={(v) => setForm({ ...form, cidade_id: v })} />
           </div>
 
           <div className="flex gap-2 pt-2">

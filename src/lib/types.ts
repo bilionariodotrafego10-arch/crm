@@ -11,6 +11,7 @@ export interface Lead {
   email: string | null
   data_contato: string
   status: 'respondeu' | 'nao_respondeu'
+  status_venda: 'negociando' | 'pago'
   cidade_id: string | null
   criado_por: string | null
   criado_em: string
@@ -24,8 +25,10 @@ export interface Aluno {
   email: string
   data_matricula: string
   curso: string
+  cidade_id: string | null
   criado_por: string | null
   criado_em: string
+  cidade?: Cidade
 }
 
 export interface FollowUp {
@@ -47,6 +50,7 @@ export interface WhatsappConversa {
   id: string
   instancia_id: string | null
   telefone_contato: string
+  chat_lid: string | null
   nome_contato: string | null
   lead_id: string | null
   ultima_mensagem_em: string
@@ -59,7 +63,7 @@ export interface WhatsappMensagem {
   id: string
   conversa_id: string
   direcao: 'recebida' | 'enviada'
-  tipo: 'texto' | 'imagem' | 'audio'
+  tipo: 'texto' | 'imagem' | 'audio' | 'video' | 'documento'
   conteudo_texto: string | null
   midia_url: string | null
   enviado_por: string | null

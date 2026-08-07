@@ -49,6 +49,7 @@ export default function FollowUpPage() {
     telefone: l.telefone,
     email: l.email ?? '',
     cidade: l.cidade?.nome ?? '',
+    negociacao: l.status_venda === 'pago' ? 'Pago' : 'Em negociação',
   }))
 
   const nomeArquivoCSV = `leads-follow-up-${new Date().toISOString().split('T')[0]}.csv`
@@ -89,7 +90,7 @@ export default function FollowUpPage() {
         />
         <BotaoExportarCSV
           dados={dadosCSV}
-          colunas={['nome', 'telefone', 'email', 'cidade']}
+          colunas={['nome', 'telefone', 'email', 'cidade', 'negociacao']}
           nomeArquivo={nomeArquivoCSV}
         />
       </div>

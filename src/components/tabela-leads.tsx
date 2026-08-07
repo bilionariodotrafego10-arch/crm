@@ -55,7 +55,7 @@ export function TabelaLeads({ leads, onEdit, onDelete }: TabelaLeadsProps) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              {['Nome', 'Telefone', 'Data de Contato', 'Status', 'Cidade', 'Ações'].map((col) => (
+              {['Nome', 'Telefone', 'Data de Contato', 'Status', 'Negociação', 'Cidade', 'Ações'].map((col) => (
                 <th key={col} className="px-4 py-3 text-left font-medium text-muted-foreground">
                   {col}
                 </th>
@@ -65,7 +65,7 @@ export function TabelaLeads({ leads, onEdit, onDelete }: TabelaLeadsProps) {
           <tbody className="divide-y divide-border">
             {paginados.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum lead encontrado
                 </td>
               </tr>
@@ -82,6 +82,15 @@ export function TabelaLeads({ leads, onEdit, onDelete }: TabelaLeadsProps) {
                       : 'bg-yellow-500/10 text-yellow-400'
                   }`}>
                     {lead.status === 'respondeu' ? 'Respondeu' : 'Não Respondeu'}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                    lead.status_venda === 'pago'
+                      ? 'bg-green-500/10 text-green-400'
+                      : 'bg-blue-500/10 text-blue-400'
+                  }`}>
+                    {lead.status_venda === 'pago' ? 'Pago' : 'Em negociação'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">

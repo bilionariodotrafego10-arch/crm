@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useWhatsappConversas } from '@/hooks/use-whatsapp-conversas'
 import { useWhatsappInstancias } from '@/hooks/use-whatsapp-instancias'
+import { useCidades } from '@/hooks/use-cidades'
 import { ListaConversas } from '@/components/whatsapp/lista-conversas'
 import { JanelaConversa } from '@/components/whatsapp/janela-conversa'
 import { ModalCadastrarLead } from '@/components/whatsapp/modal-cadastrar-lead'
@@ -10,6 +11,7 @@ import { ModalCadastrarLead } from '@/components/whatsapp/modal-cadastrar-lead'
 export default function WhatsappPage() {
   const { conversas, refetch: refetchConversas } = useWhatsappConversas()
   const { instancias } = useWhatsappInstancias()
+  const { cidades } = useCidades()
   const [conversaSelecionadaId, setConversaSelecionadaId] = useState<string | null>(null)
   const [filtroInstanciaId, setFiltroInstanciaId] = useState<string | 'todos'>('todos')
   const [modalCadastroAberto, setModalCadastroAberto] = useState(false)
@@ -43,6 +45,7 @@ export default function WhatsappPage() {
           conversaId={conversaSelecionada.id}
           telefone={conversaSelecionada.telefone_contato}
           nomeSugerido={conversaSelecionada.nome_contato}
+          cidades={cidades}
           onSaved={() => { setModalCadastroAberto(false); refetchConversas() }}
           onClose={() => setModalCadastroAberto(false)}
         />

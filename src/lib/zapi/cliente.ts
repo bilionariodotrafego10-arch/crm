@@ -55,3 +55,17 @@ export function enviarImagem(credenciais: CredenciaisInstancia, telefone: string
 export function enviarAudio(credenciais: CredenciaisInstancia, telefone: string, audioUrl: string) {
   return chamarZApi(credenciais, '/send-audio', { phone: telefone, audio: audioUrl })
 }
+
+export function enviarVideo(credenciais: CredenciaisInstancia, telefone: string, videoUrl: string, legenda?: string) {
+  return chamarZApi(credenciais, '/send-video', { phone: telefone, video: videoUrl, caption: legenda ?? '' })
+}
+
+export function enviarDocumento(
+  credenciais: CredenciaisInstancia,
+  telefone: string,
+  documentoUrl: string,
+  nomeArquivo: string,
+  extensao: string
+) {
+  return chamarZApi(credenciais, `/send-document/${extensao}`, { phone: telefone, document: documentoUrl, fileName: nomeArquivo })
+}

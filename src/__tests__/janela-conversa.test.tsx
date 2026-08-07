@@ -16,7 +16,7 @@ jest.mock('@/app/dashboard/whatsapp/actions', () => ({
 }))
 
 const conversaSemLead: WhatsappConversa = {
-  id: 'c1', instancia_id: 'i1', telefone_contato: '5511999998888', nome_contato: 'Maria',
+  id: 'c1', instancia_id: 'i1', telefone_contato: '5511999998888', chat_lid: null, nome_contato: 'Maria',
   lead_id: null, ultima_mensagem_em: '2026-08-04T10:00:00Z', criado_em: '2026-08-04T09:00:00Z',
 }
 

@@ -13,7 +13,7 @@ export function useAlunos() {
     setLoading(true)
     const { data } = await supabase
       .from('alunos')
-      .select('*')
+      .select('*, cidade:cidades(id, nome, estado)')
       .order('data_matricula', { ascending: false })
     setAlunos(data ?? [])
     setLoading(false)
@@ -21,13 +21,13 @@ export function useAlunos() {
 
   useEffect(() => { fetchAlunos() }, [fetchAlunos])
 
-  const createAluno = async (aluno: Omit<Aluno, 'id' | 'criado_em' | 'criado_por'>) => {
+  const createAluno = async (aluno: Omit<Aluno, 'id' | 'criado_em' | 'criado_por' | 'cidade'>) => {
     const { error } = await supabase.from('alunos').insert(aluno)
     if (!error) await fetchAlunos()
     return { error }
   }
 
-  const updateAluno = async (id: string, updates: Partial<Omit<Aluno, 'id' | 'criado_em' | 'criado_por'>>) => {
+  const updateAluno = async (id: string, updates: Partial<Omit<Aluno, 'id' | 'criado_em' | 'criado_por' | 'cidade'>>) => {
     const { error } = await supabase.from('alunos').update(updates).eq('id', id)
     if (!error) await fetchAlunos()
     return { error }

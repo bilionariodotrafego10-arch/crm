@@ -10,12 +10,12 @@ const instancias: WhatsappInstancia[] = [
 
 const conversas: WhatsappConversa[] = [
   {
-    id: 'c1', instancia_id: 'i1', telefone_contato: '5511999998888', nome_contato: 'Maria',
+    id: 'c1', instancia_id: 'i1', telefone_contato: '5511999998888', chat_lid: null, nome_contato: 'Maria',
     lead_id: null, ultima_mensagem_em: '2026-08-04T10:00:00Z', criado_em: '2026-08-04T09:00:00Z',
     instancia: instancias[0],
   },
   {
-    id: 'c2', instancia_id: 'i2', telefone_contato: '5511999997777', nome_contato: null,
+    id: 'c2', instancia_id: 'i2', telefone_contato: '5511999997777', chat_lid: null, nome_contato: null,
     lead_id: 'l1', ultima_mensagem_em: '2026-08-04T11:00:00Z', criado_em: '2026-08-04T09:30:00Z',
     instancia: instancias[1], lead: { id: 'l1', nome: 'João Silva' },
   },

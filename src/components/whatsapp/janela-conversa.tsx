@@ -46,7 +46,10 @@ export function JanelaConversa({ conversa, onCadastrarLead }: JanelaConversaProp
     if (!arquivo) return
     setEnviando(true)
     try {
-      const tipo = arquivo.type.startsWith('image/') ? 'imagem' : 'audio'
+      const tipo = arquivo.type.startsWith('image/') ? 'imagem'
+        : arquivo.type.startsWith('audio/') ? 'audio'
+        : arquivo.type.startsWith('video/') ? 'video'
+        : 'documento'
       const formData = new FormData()
       formData.set('conversaId', conversa.id)
       formData.set('tipo', tipo)
@@ -96,7 +99,7 @@ export function JanelaConversa({ conversa, onCadastrarLead }: JanelaConversaProp
         <input
           ref={inputArquivoRef}
           type="file"
-          accept="image/*,audio/*"
+          accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
           onChange={handleAnexar}
           className="hidden"
           id="anexo-whatsapp"
